@@ -1,89 +1,122 @@
-let callAdjustLayout;
-        let currentLayout = "desktop",
-            nextLayout = "desktop";
+window.addEventListener('DOMContentLoaded', () => {
 
-       
-        function detectIE() {
-            var ua = window.navigator.userAgent;
+});
+const tiles = Array.from(document.querySelectorAll('.tile'));
+const playerDisplay = document.querySelector('.display-player');
+const resetButton = document.querySelector('#reset');
+const announcer = document.querySelector('.announcer');
 
-            var msie = ua.indexOf('MSIE ');
-            if (msie > 0) {
-                // IE 10 or older => return version number
-                return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
-            }
 
-            var trident = ua.indexOf('Trident/');
-            if (trident > 0) {
-                // IE 11 => return version number
-                var rv = ua.indexOf('rv:');
-                return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
-            }
+let board = ['', '', '', '', '', '', '', '', ''];
+let currentPlayer = 'X';
+let isGameActive = true;
 
-            var edge = ua.indexOf('Edge/');
-            if (edge > 0) {
-                // Edge (IE 12+) => return version number
-                return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
-            }
+const PLAYERX_WON = 'PLAYERX_WON';
+const PLAYERO_WON = 'PLAYERO_WON';
+const TIE = 'TIE';
 
-            // other browser
-            return false;
+/*
+   Indexes within the board
+   [0] [1] [2]
+   [3] [4] [5]
+   [6] [7] [8]
+*/
+
+const winningConditions = [
+   [0, 1, 2],
+   [3, 4, 5],
+   [6, 7, 8],
+   [0, 3, 6],
+   [1, 4, 7],
+   [2, 5, 8],
+   [0, 4, 8],
+   [2, 4, 6]
+];
+
+const isValidAction = (tile) => {
+    if (tile.innerText === 'X' || tile.innerText === 'O'){
+        return false;
+    }
+
+    return true;
+};
+const updateBoard =  (index) => {
+   board[index] = currentPlayer;
+}
+
+const changePlayer = () => {
+    playerDisplay.classList.remove(`player${currentPlayer}`);
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    playerDisplay.innerText = currentPlayer;
+    playerDisplay.classList.add(`player${currentPlayer}`);
+}
+
+const announce = (type) => {
+    switch(type){
+       case PLAYERO_WON:
+            announcer.innerHTML = 'Player <span class="playerO">O</span> Won';
+            break;
+       case PLAYERX_WON:
+            announcer.innerHTML = 'Player <span class="playerX">X</span> Won';
+            break;
+       case TIE:
+            announcer.innerText = 'Tie';
         }
+    announcer.classList.remove('hide');
+};
 
-        // Adjust layout based on the browser width
-        function adjustLayout() {
-            let block1, block2, block3, block4, block5, block6, block7, block8, block9;
 
-            if (window.innerWidth <= 1199) {
-                // Mobile layout
-                nextLayout = "mobile";
-                block1 = $("div[data-mobile-seq-no='1']");
-                block2 = $("div[data-mobile-seq-no='2']");
-                block3 = $("div[data-mobile-seq-no='3']");
-                block4 = $("div[data-mobile-seq-no='4']");
-                block5 = $("div[data-mobile-seq-no='5']");
-                block6 = $("div[data-mobile-seq-no='6']");
-                block7 = $("div[data-mobile-seq-no='7']");
-                block8 = $("div[data-mobile-seq-no='8']");
-                block9 = $("div[data-mobile-seq-no='9']");
-            } else {
-                // Desktop layout
-                nextLayout = "desktop";
-                block1 = $("div[data-desktop-seq-no='1']");
-                block2 = $("div[data-desktop-seq-no='2']");
-                block3 = $("div[data-desktop-seq-no='3']");
-                block4 = $("div[data-desktop-seq-no='4']");
-                block5 = $("div[data-desktop-seq-no='5']");
-                block6 = $("div[data-desktop-seq-no='6']");
-                block7 = $("div[data-desktop-seq-no='7']");
-                block8 = $("div[data-desktop-seq-no='8']");
-                block9 = $("div[data-desktop-seq-no='9']");
-            }
+function handleResultValidation() {
+  let roundWon = false;
+  for (let i = 0; i <= 7; i++) {
+    const winCondition = winningConditions[i];
+    const a = board[winCondition[0]];
+    const b = board[winCondition[1]];
+    const c = board[winCondition[2]];
+    if (a === "" || b === "" || c === "") {
+      continue;
+    }
+    if (a === b && b === c) {
+      roundWon = true;
+      break;
+    }
+  }
 
-            if (nextLayout !== currentLayout) {
-                // Reorder blocks based on their seq no
-                block1.after(block2.detach());
-                block2.after(block3.detach());
-                block3.after(block4.detach());
-                block4.after(block5.detach());
-                block5.after(block6.detach());
-                block6.after(block7.detach());
-                block7.after(block8.detach());
-                block8.after(block9.detach());
-                currentLayout = nextLayout;
-            }
-        }
+  if (roundWon) {
+    announce(currentPlayer === "X" ? PLAYERX_WON : PLAYERO_WON);
+    isGameActive = false;
+    return;
+  }
 
-        // Adjust layout upon window resize
-        window.onresize = function () {
-            clearTimeout(callAdjustLayout);
-            callAdjustLayout = setTimeout(adjustLayout, 100);
-        }
+  if (!board.includes("")) announce(TIE);
+}
 
-        // DOM is ready
-        $(function () {
-            if (detectIE()) {
-                alert('Please use the latest version of Chrome or Firefox for best browsing experience.');
-            }
+const userAction = (tile, index) => {
+  if (isValidAction(tile) && isGameActive) {
+    tile.innerText = currentPlayer;
+    tile.classList.add(`player${currentPlayer}`);
+    updateBoard(index);
+    handleResultValidation();
+    changePlayer();
+  }
+};
 
-            adjustLayout();
-        })
+tiles.forEach( (tile, index) => {
+    tile.addEventListener('click', () => userAction(tile, index));
+});
+
+const resetBoard = () => {
+    board = ['', '', '', '', '', '', '', '', ''];
+    isGameActive = true;
+    announcer.classList.add('hide');
+
+    if (currentPlayer === 'O') {
+        changePlayer();
+    }
+
+    tiles.forEach(tile => {
+        tile.innerText = '';
+        tile.classList.remove('playerX');
+        tile.classList.remove('playerO');
+    });
+}
