@@ -1,236 +1,374 @@
-var board=[];  
- var userChoice  
- var currentTurn  
- function minmax(){  
-  this.minPlayer=1;  
-  this.maxPlayer=2;  
- }  
- /*Setting the min and max values once we get the choice from the user*/  
- minmax.prototype.setMinMax=function(min,max){  
-  this.minPlayer=min;  
-  this.maxPlayer=max;  
- }  
- /*Copying the current configuration of the board and returning it. We do this since we need more have to operate on induvidual board instances on deeper depths   
- */  
- minmax.prototype.copyBoard=function(board){  
-  return board.slice(0);  
- }  
- /*This function checks if a position is free on the board and makes the move. If the position is free, it makes a move and returns the new board, else returns the old board.  
- */  
- minmax.prototype.makeMove=function(position,board,player){  
-  if(board[position]==0){  
-   var newBoard=this.copyBoard(board);  
-   newBoard[position]=player;  
-   return newBoard;  
-  }  
-  else{  
-   return null;  
-  }  
- }  
- /*The main implementation of Minax algorithm. Since we are already making the max players move here, we call the minMove function here. The minMove and maxMove functions flicker between each other until a score is available. This function returns the bestmove for the computer for the given board configuration.   
- */  
- minmax.prototype.minMaxAlgo=function(board){  
-  var bestValue=-100;  
-  var bestMove=0;  
-  var newBoard=[];  
-  var value;  
-  for(var i=0;i<board.length;i++){  
-   newBoard=this.makeMove(i,board,this.maxPlayer);  
-   if(newBoard){  
-    value=this.minMove(newBoard);  
-    if(value>bestValue){  
-     bestValue=value;  
-     bestMove=i;  
-    }  
-   }  
-  }  
-  return bestMove;  
- }  
- /*This function depicts the moves of the player, it returns the final score of the board configuration if either of the players won or if it is a tie. Else it calls the maxMove function  
- */  
- minmax.prototype.minMove=function(board){  
-  if(this.won(this.minPlayer,board)){  
-   return -10;  
-  }  
-  else if(this.won(this.maxPlayer,board)){  
-   return 10;  
-  }  
-  else if(this.isTie(board)){  
-   return 0;  
-  }  
-  else{  
-   var leastValue=100;  
-   for(var i=0;i<board.length;i++){  
-    var newBoard=this.makeMove(i,board,this.minPlayer);  
-    if(newBoard){  
-     var value=this.maxMove(newBoard);  
-     if(value<leastValue){  
-      leastValue=value;  
-     }  
-    }  
-   }  
-   return leastValue;  
-  }  
- }  
- /*This function depicts the moves of the computer, it returns the final score of the board configuration if either of the players won or if it is a tie. Else calls the minMove function  
- */  
- minmax.prototype.maxMove=function(board){  
-  if(this.won(this.minPlayer,board)){  
-   return -10;  
-  }  
-  else if(this.won(this.maxPlayer,board)){  
-   return 10;  
-  }  
-  else if(this.isTie(board)){  
-   return 0;  
-  }  
-  else{  
-   var maxValue=-100;  
-   for(var i=0;i<board.length;i++){  
-    var newBoard=this.makeMove(i,board,this.maxPlayer);  
-    if(newBoard){  
-     var value=this.minMove(newBoard);  
-     if(value>maxValue){  
-      maxValue=value;  
-     }  
-    }  
-   }  
-   return maxValue;  
-  }  
- }  
- /*In this function we haveto check whether the player in the current board configuration has won the game or not. For a win we have to check the row , columns and diagnols respectively  
- */  
- minmax.prototype.won=function(player,board){  
-  if((board[0]==player&&board[1]==player&&board[2]==player)||  
-    (board[3]==player&&board[4]==player&&board[5]==player)||  
-    (board[6]==player&&board[7]==player&&board[8]==player)||  
-    (board[0]==player&&board[3]==player&&board[6]==player)||  
-    (board[1]==player&&board[4]==player&&board[7]==player)||  
-    (board[2]==player&&board[5]==player&&board[8]==player)||  
-    (board[0]==player&&board[4]==player&&board[8]==player)||  
-    (board[2]==player&&board[4]==player&&board[6]==player)){  
-   return true;  
-  }  
-  else{  
-   return false;  
-  }  
- }  
- /*Since the board is populated with 0's in empty positions, I am checking for 0's, if I find any I will return the value as false else as true  
- */  
- minmax.prototype.isTie=function(board){  
-  for(var i=0;i<board.length;i++){  
-   if(board[i]==0){  
-    return false;  
-   }  
-  }  
-  return true;  
- }  
- //End of the MinMax algorithm  
- $(function() {  
-  game=new minmax(board);  
-  board=[0,0,0,0,0,0,0,0,0];  
-  $("#game").css("pointer-events", "none");  
-  console.log(board);  
- });  
- /*The main function which handles the user inputs. It basically makes a check of two important conditions and if they satify, it continues processing the input. They are   
- 1. Check if the current turn is the users turn, as the user might click on the board, while the computer is processing its move, if the computer accepts this move, then the game goes haywire .  
- 2. Check if the board position is already filled. It doesnt make sense to accept input into a box which is already filled. Yet to make sure even that the computer doesnt accept it as there might be accidental clicks, this condition should be in place   
- */  
- $("td").click(function(e){  
-  console.log(currentTurn);  
-  if(currentTurn=="user"){  
-    var id=$(this).attr("id");  
-    var value=$("#"+id).attr("data-value");  
-    if(board[value-1]==0){  
-      $("#game").css("pointer-events", "none");  
-      $(convertValueToDiv(value-1) + " .center-space").html(userChoice);  
-      board[value-1]=game.minPlayer;  
-      if(game.won(game.minPlayer,board)){  
-       $("#result").text("You win");  
-       $("#anotherGame").css("display","block");  
-      }  
-      else if(game.isTie(board)){  
-       $("#result").text("Its a tie");  
-       $("#anotherGame").css("display","block");  
-      }  
-      else{  
-       currentTurn="computer";  
-       setTimeout(delayComputerMove,1000);  
-      }  
-    }  
-  }   
- });  
- function delayComputerMove(){  
-  var move=game.minMaxAlgo(board);  
-  console.log(move);  
-  board[move]=game.maxPlayer;  
-  $(convertValueToDiv(move) + " .center-space").html(computerChoice);  
-  setTimeout(function(){currentTurn="user";},0);  
-  if(game.won(game.maxPlayer,board)){  
-   $("#result").text("Computer wins");  
-   $("#anotherGame").css("display","block");  
-  }  
-  else if(game.isTie(board)){  
-   $("#result").text("Its a tie");  
-   $("#anotherGame").css("display","block");  
-  }  
-  else{  
-   $("#game").css("pointer-events", "auto");  
-  }  
- }  
- $("#x").click(function(){  
-  currentTurn="user";  
-  $("#choiceMsg").text("You have choosen X, and X goes first !!");  
-  $("#options").toggle(1000);  
-  computerChoice="<i class='fa fa-stop-circle animated flip'></i>";  
-  userChoice="<i class='fa fa-times animated flip'></i>";  
-  game.setMinMax(2,1);  
-  $("#game").css("pointer-events", "auto");  
-  console.log(board);  
- });  
- $("#o").click(function(){  
-  $("#game").css("pointer-events", "auto");  
-  currentTurn="computer";  
-  $("#choiceMsg").text("You have choosen O but X goes first ");  
-  $("#options").toggle(1000);  
-  setTimeout(delayO,1000);  
- });  
- $("#yes").click(function(){  
-  board=[0,0,0,0,0,0,0,0,0];  
-  $("td .center-space").empty();  
-  $("#anotherGame").css("display","none");  
-  $("#result").text("");  
-  $("#choiceMsg").text("");  
-  $("#options").toggle(1000);  
- });  
- $("#no").click(function(){  
-  $("#game").css("pointer-events", "none");  
-  $("#choiceMsg").text("");  
-  $("#anotherGame").css("display","none");  
-  $("td").empty();  
-  $("#result").text("Refresh page to play again");  
- });  
- /*An initial delay when the computer goes first, to create an illusion that the computer is thinking. Also inrespect of the design perspective, when the the options toggle out, the first move of the computer appears  
- */  
- function delayO(){  
-  $('#game').attr("disabled", "disabled");  
-  userChoice="<i class='fa fa-stop-circle animated flip'></i>";  
-  computerChoice="<i class='fa fa-times animated flip'></i>";  
-  game.setMinMax(1,2);  
-  myMax=8;  
-  myMin=0;  
-  /*Generating a random first move for the computer, because when the computer goes first, the first move doesnt matter. Also it takes lot of time for the computer to generate a first move with empty board, as it has to evaluate a lot of board positions.   
-  */  
-  var move= Math.floor(Math.random()*(myMax-myMin+1))+myMin;  
-  board[move]=game.maxPlayer;  
-  var divId=convertValueToDiv(move);  
-  $(divId + " .center-space").html(computerChoice);  
-  console.log(board);  
-  setTimeout(function(){currentTurn="user";},0);  
- }  
- /*Return the divisionId for a corresponding value. This method is useful when the computer goes first and generates a random move. To represent the move on the table, we need a mapping between the value and the divId   
- */  
- function convertValueToDiv(value){  
-  var cases={0:"#one",1:"#two",2:"#three",3:"#four",4:"#five",5:"#six",6:"#seven",7:"#eight",8:"#nine"};  
-  return cases[value];  
- } 
+function myfunc() {
+ 
+    // Setting DOM to all boxes or input field
+    var b1, b2, b3, b4, b5, b6, b7, b8, b9;
+    b1 = document.getElementById("b1").value;
+    b2 = document.getElementById("b2").value;
+    b3 = document.getElementById("b3").value;
+    b4 = document.getElementById("b4").value;
+    b5 = document.getElementById("b5").value;
+    b6 = document.getElementById("b6").value;
+    b7 = document.getElementById("b7").value;
+    b8 = document.getElementById("b8").value;
+    b9 = document.getElementById("b9").value;
+ 
+    // Checking if Player X won or not and after
+    // that disabled all the other fields
+    if ((b1 == 'x' || b1 == 'X') && (b2 == 'x' ||
+        b2 == 'X') && (b3 == 'x' || b3 == 'X')) {
+        document.getElementById('print')
+            .innerHTML = "Player X won";
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b5").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b8").disabled = true;
+        document.getElementById("b9").disabled = true;
+        window.alert('Player X won');
+    }
+    else if ((b1 == 'x' || b1 == 'X') && (b4 == 'x' ||
+        b4 == 'X') && (b7 == 'x' || b7 == 'X')) {
+        document.getElementById('print')
+            .innerHTML = "Player X won";
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b5").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b8").disabled = true;
+        document.getElementById("b9").disabled = true;
+ 
+        window.alert('Player X won');
+    }
+    else if ((b7 == 'x' || b7 == 'X') && (b8 == 'x' ||
+        b8 == 'X') && (b9 == 'x' || b9 == 'X')) {
+        document.getElementById('print')
+            .innerHTML = "Player X won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b5").disabled = true;
+        document.getElementById("b6").disabled = true;
+        window.alert('Player X won');
+    }
+    else if ((b3 == 'x' || b3 == 'X') && (b6 == 'x' ||
+        b6 == 'X') && (b9 == 'x' || b9 == 'X')) {
+        document.getElementById('print')
+            .innerHTML = "Player X won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b5").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b8").disabled = true;
+        window.alert('Player X won');
+    }
+    else if ((b1 == 'x' || b1 == 'X') && (b5 == 'x' ||
+        b5 == 'X') && (b9 == 'x' || b9 == 'X')) {
+        document.getElementById('print')
+            .innerHTML = "Player X won";
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b8").disabled = true;
+        window.alert('Player X won');
+    }
+    else if ((b3 == 'x' || b3 == 'X') && (b5 == 'x' ||
+        b5 == 'X') && (b7 == 'x' || b7 == 'X')) {
+        document.getElementById('print')
+            .innerHTML = "Player X won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b8").disabled = true;
+        document.getElementById("b9").disabled = true;
+        window.alert('Player X won');
+    }
+    else if ((b2 == 'x' || b2 == 'X') && (b5 == 'x' ||
+        b5 == 'X') && (b8 == 'x' || b8 == 'X')) {
+        document.getElementById('print')
+            .innerHTML = "Player X won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b9").disabled = true;
+        window.alert('Player X won');
+    }
+    else if ((b4 == 'x' || b4 == 'X') && (b5 == 'x' ||
+        b5 == 'X') && (b6 == 'x' || b6 == 'X')) {
+        document.getElementById('print')
+            .innerHTML = "Player X won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b8").disabled = true;
+        document.getElementById("b9").disabled = true;
+        window.alert('Player X won');
+    }
+ 
+    // Checking of Player X finish
+    // Checking for Player 0 starts, Is player 0 won or
+    // not and after that disabled all the other fields
+    else if ((b1 == '0' || b1 == '0') && (b2 == '0' ||
+        b2 == '0') && (b3 == '0' || b3 == '0')) {
+        document.getElementById('print')
+            .innerHTML = "Player 0 won";
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b5").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b8").disabled = true;
+        document.getElementById("b9").disabled = true;
+        window.alert('Player 0 won');
+    }
+    else if ((b1 == '0' || b1 == '0') && (b4 == '0' ||
+        b4 == '0') && (b7 == '0' || b7 == '0')) {
+        document.getElementById('print')
+            .innerHTML = "Player 0 won";
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b5").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b8").disabled = true;
+        document.getElementById("b9").disabled = true;
+        window.alert('Player 0 won');
+    }
+    else if ((b7 == '0' || b7 == '0') && (b8 == '0' ||
+        b8 == '0') && (b9 == '0' || b9 == '0')) {
+        document.getElementById('print')
+            .innerHTML = "Player 0 won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b5").disabled = true;
+        document.getElementById("b6").disabled = true;
+        window.alert('Player 0 won');
+    }
+    else if ((b3 == '0' || b3 == '0') && (b6 == '0' ||
+        b6 == '0') && (b9 == '0' || b9 == '0')) {
+        document.getElementById('print')
+            .innerHTML = "Player 0 won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b5").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b8").disabled = true;
+        window.alert('Player 0 won');
+    }
+    else if ((b1 == '0' || b1 == '0') && (b5 == '0' ||
+        b5 == '0') && (b9 == '0' || b9 == '0')) {
+        document.getElementById('print')
+            .innerHTML = "Player 0 won";
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b8").disabled = true;
+        window.alert('Player 0 won');
+    }
+    else if ((b3 == '0' || b3 == '0') && (b5 == '0' ||
+        b5 == '0') && (b7 == '0' || b7 == '0')) {
+        document.getElementById('print')
+            .innerHTML = "Player 0 won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b8").disabled = true;
+        document.getElementById("b9").disabled = true;
+        window.alert('Player 0 won');
+    }
+    else if ((b2 == '0' || b2 == '0') && (b5 == '0' ||
+        b5 == '0') && (b8 == '0' || b8 == '0')) {
+        document.getElementById('print')
+            .innerHTML = "Player 0 won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b4").disabled = true;
+        document.getElementById("b6").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b9").disabled = true;
+        window.alert('Player 0 won');
+    }
+    else if ((b4 == '0' || b4 == '0') && (b5 == '0' ||
+        b5 == '0') && (b6 == '0' || b6 == '0')) {
+        document.getElementById('print')
+            .innerHTML = "Player 0 won";
+        document.getElementById("b1").disabled = true;
+        document.getElementById("b2").disabled = true;
+        document.getElementById("b3").disabled = true;
+        document.getElementById("b7").disabled = true;
+        document.getElementById("b8").disabled = true;
+        document.getElementById("b9").disabled = true;
+        window.alert('Player 0 won');
+    }
+ 
+    // Checking of Player 0 finish
+    // Here, Checking about Tie
+    else if ((b1 == 'X' || b1 == '0') && (b2 == 'X'
+        || b2 == '0') && (b3 == 'X' || b3 == '0') &&
+        (b4 == 'X' || b4 == '0') && (b5 == 'X' ||
+        b5 == '0') && (b6 == 'X' || b6 == '0') &&
+        (b7 == 'X' || b7 == '0') && (b8 == 'X' ||
+        b8 == '0') && (b9 == 'X' || b9 == '0')) {
+            document.getElementById('print')
+                .innerHTML = "Match Tie";
+            window.alert('Match Tie');
+    }
+    else {
+ 
+        // Here, Printing Result
+        if (flag == 1) {
+            document.getElementById('print')
+                .innerHTML = "Player X Turn";
+        }
+        else {
+            document.getElementById('print')
+                .innerHTML = "Player 0 Turn";
+        }
+    }
+}
+ 
+// Function to reset game
+function myfunc_2() {
+    location.reload();
+    document.getElementById('b1').value = '';
+    document.getElementById("b2").value = '';
+    document.getElementById("b3").value = '';
+    document.getElementById("b4").value = '';
+    document.getElementById("b5").value = '';
+    document.getElementById("b6").value = '';
+    document.getElementById("b7").value = '';
+    document.getElementById("b8").value = '';
+    document.getElementById("b9").value = '';
+ 
+}
+ 
+// Here onwards, functions check turn of the player
+// and put accordingly value X or 0
+flag = 1;
+function myfunc_3() {
+    if (flag == 1) {
+        document.getElementById("b1").value = "X";
+        document.getElementById("b1").disabled = true;
+        flag = 0;
+    }
+    else {
+        document.getElementById("b1").value = "0";
+        document.getElementById("b1").disabled = true;
+        flag = 1;
+    }
+}
+ 
+function myfunc_4() {
+    if (flag == 1) {
+        document.getElementById("b2").value = "X";
+        document.getElementById("b2").disabled = true;
+        flag = 0;
+    }
+    else {
+        document.getElementById("b2").value = "0";
+        document.getElementById("b2").disabled = true;
+        flag = 1;
+    }
+}
+ 
+function myfunc_5() {
+    if (flag == 1) {
+        document.getElementById("b3").value = "X";
+        document.getElementById("b3").disabled = true;
+        flag = 0;
+    }
+    else {
+        document.getElementById("b3").value = "0";
+        document.getElementById("b3").disabled = true;
+        flag = 1;
+    }
+}
+ 
+function myfunc_6() {
+    if (flag == 1) {
+        document.getElementById("b4").value = "X";
+        document.getElementById("b4").disabled = true;
+        flag = 0;
+    }
+    else {
+        document.getElementById("b4").value = "0";
+        document.getElementById("b4").disabled = true;
+        flag = 1;
+    }
+}
+ 
+function myfunc_7() {
+    if (flag == 1) {
+        document.getElementById("b5").value = "X";
+        document.getElementById("b5").disabled = true;
+        flag = 0;
+    }
+    else {
+        document.getElementById("b5").value = "0";
+        document.getElementById("b5").disabled = true;
+        flag = 1;
+    }
+}
+ 
+function myfunc_8() {
+    if (flag == 1) {
+        document.getElementById("b6").value = "X";
+        document.getElementById("b6").disabled = true;
+        flag = 0;
+    }
+    else {
+        document.getElementById("b6").value = "0";
+        document.getElementById("b6").disabled = true;
+        flag = 1;
+    }
+}
+ 
+function myfunc_9() {
+    if (flag == 1) {
+        document.getElementById("b7").value = "X";
+        document.getElementById("b7").disabled = true;
+        flag = 0;
+    }
+    else {
+        document.getElementById("b7").value = "0";
+        document.getElementById("b7").disabled = true;
+        flag = 1;
+    }
+}
+ 
+function myfunc_10() {
+    if (flag == 1) {
+        document.getElementById("b8").value = "X";
+        document.getElementById("b8").disabled = true;
+        flag = 0;
+    }
+    else {
+        document.getElementById("b8").value = "0";
+        document.getElementById("b8").disabled = true;
+        flag = 1;
+    }
+}
+ 
+function myfunc_11() {
+    if (flag == 1) {
+        document.getElementById("b9").value = "X";
+        document.getElementById("b9").disabled = true;
+        flag = 0;
+    }
+    else {
+        document.getElementById("b9").value = "0";
+        document.getElementById("b9").disabled = true;
+        flag = 1;
+    }
+}
