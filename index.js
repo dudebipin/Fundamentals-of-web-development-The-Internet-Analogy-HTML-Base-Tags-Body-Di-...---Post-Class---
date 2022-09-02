@@ -120,3 +120,6 @@ const resetBoard = () => {
         tile.classList.remove('playerO');
     });
 }
+
+
+resetButton.addEventListener('click', resetBoard);
